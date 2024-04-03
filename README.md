@@ -1,46 +1,51 @@
 # Glint Survey NLP
 
-## Package Install Tips: (TBD)
+## Package Requirements: (TBD)
 ```
 pip install bertopic
 ```
 
 It often encounters a time-out error on GCP. If this happens, simply re-run `pip install bertopic`. It will resume from its installation checkpoints.
 
-- Installing Instruction 
+> - Installing Instruction 
   
 ## Data:
 
-#### HCA Healthcare De-identified 2023 Glint Employee Surveys
+#### HCA Healthcare De-identified Glint Employee Survey 2023
 _Comments are often misspelled, unstructured, multi-topics, packed with nuance, or in different languages which presents technical challenges for automatically processing into actionable insights​_
 
 ----
-#### Debrief
-- **Data Type**: Free-text
-- **Collection Period**: 2023, Second-Round
-- **Confidentiality**: De-identified
+#### Debriefs
+> - **Data Type**: Free-text
+> - **Collection Period**: 2023, Second-Round
+> - **Confidentiality**: De-identified
 
-#### Content
+#### Contents
 
-1. **Manager**
-2. **Organization**
-3. **Personal**
-4. **Resource**
-5. **Team**
+> 1. **Manager**
+> 2. **Organization**
+> 3. **Personal**
+> 4. **Resource**
+> 5. **Team**
 
 #### Key Statistics
 
-- **Total Responses**: 186,016
-- **Total Free-Text Comments**: 361,201
+> - **Total Responses**: 186,016
+> - **Total Free-Text Comments**: 361,201
+
+---
+## Data Privacy: (TBD)
+_HR TEAM EXCEL FILE​, De-id level: remove employee demographics_
+
+## Method / Pseudo Code:
+<img width="2388" alt="new_diagram" src="https://github.com/HCA-CTI/glint_survey_nlp/assets/143527820/ece79975-cbce-4c79-a3db-e1877434b871">
 
 ---
 
-## Method / Pseudo Code:
-
-<img width="2388" alt="new_diagram" src="https://github.com/alvinnebula/nlp_project/assets/89406404/6b89f33f-2c1b-4858-a35e-1c3714675108">
-
 #### Pre-processing
-_No NA Removal in this step_
+> _No NA Removal in this step_
+
+- *Code Breakdown*
 ```
 src/basic/Preprocessor.py
 
@@ -62,6 +67,9 @@ src/basic/Preprocessor.py
                     feature columns + ['Resources COMMENT']    -> output.resource_data
                     feature columns + ['Team COMMENT']         -> output.team_data
 ```
+
+---
+
 #### Semantic Split (Optional)
 ```
 import vertexai.language_models
@@ -75,31 +83,44 @@ output[0] = "Our IVs have recently changed and they break off and are unreliable
 output[1] = "Our ACE wraps are also unreliable and have no support."
 output[2] = " We need more medications in the pyxis."
 ```
+---
 
 #### Categorization
-_Core Function_
 
-![BERTopic_Lego](https://github.com/alvinnebula/nlp_project/assets/89406404/8fa26161-9565-4eff-a603-3fdd6602c20d)
+> _Core Function_
 
-```
+<table>
+  <tr>
+    <!-- Image Column -->
+    <td>
+      <img src="https://github.com/HCA-CTI/glint_survey_nlp/assets/143527820/c09c8225-94f7-461a-8129-f5bfd1d06d98" alt="BERTopic_Lego">
+    </td>
+    <!-- Code Column -->
+    <td>
+      <pre>
 BERTopic: Highly flexible parameter & sub-models combination
-
-
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 topic_model = BERTopic(
-                        top_n_words,
-                        calculate_probabilities,
-                        UMAP(...),
-                        HDBSCAN(...),
-                        CountVectorizer(...),
-                        ClassTfidfTransformer(...),
-                        KeyBERTInspired(...)    
-                      )
-```
-BERTopic Parameters:
-- `top_n_words`: The number of words per topic to extract.
-- `calculate_probabilities`: Calculate the probabilities of all topics per document. Set to `True` for following hyperparameter tuning.
+                        &nbsp;&nbsp; top_n_words,
+                        &nbsp;&nbsp; calculate_probabilities,
+                        &nbsp;&nbsp;
+                        &nbsp;&nbsp; KeyBERTInspired(...),
+                        &nbsp;&nbsp; ClassTfidfTransformer(...),
+                        &nbsp;&nbsp; CountVectorizer(...),
+                        &nbsp;&nbsp; HDBSCAN(...),
+                        &nbsp;&nbsp; UMAP(...) 
+                      &nbsp; )
+      </pre>
+    </td>
+  </tr>
+</table>
 
-Sub-models:
+**BERTopic Parameters:**
+ - `top_n_words`: The number of words per topic to extract.
+ - `calculate_probabilities`: Calculate the probabilities of all topics per document. Set to `True` for following hyperparameter tuning.
+
+**Sub-models:**
 - *Embedding Clustering*
     - `UMAP()`: A solution to __reduce dimensionality__ of the embeddings to a workable dimensional space for clustering algorithms to work with.
     - `HDBSCAN()`: To __cluster similar embeddings into groups__ to extract our topics, after reducing the dimensionality (get more accurate our topic representations).
@@ -109,6 +130,7 @@ Sub-models:
 - *Optional Finetuning*
     - `KeyBERTInspired()`: To fine-tune based on __semantic relationship__ between keywords/keyphrases.
 
+- *Code Breakdown*
 ```
 src/basic/Categorizer.py
 
@@ -136,8 +158,8 @@ src/basic/Categorizer.py
 --------------------- ## Representative   Obtaining highest topic contribution comment for each topic (for next step, reason we set calculate_probabilities = True)
 
 -------- # generate 3 datasets for next step:
-            Topic/ Comment Counts/ Representations               -> output.topic_data,
-            For each topic, top 20 representative comments       -> output.document_data,
+            'Topic'/ 'Comment Counts'/ 'Representations'        -> output.topic_data,
+            For each topic, top 20 representative comments      -> output.document_data,
             Augment topic modeling results to original data     -> output.full_data
 ```
 - `ps, 1`: for some meaningless comments could be converted to ['Nothing', 'Unknown', 'Missing', 'Null'] by Lemmatization
@@ -146,8 +168,12 @@ src/basic/Categorizer.py
 ------------------------------------
 By this line, topic categorization completed 
 
+---
+
 #### Summarization
-_Core Function_
+> _Core Function_
+
+- *Code Breakdown*
 ```
 src/basic/Summarizer.py
 
@@ -164,14 +190,16 @@ src/basic/Summarizer.py
 --------------------- ## Prompt Engineering by group name, summary
 
 -------- # generate a dataset as an augmentation to topic_data:
-            Topic/ Comment Counts/ Summary               -> output.result_data
+                      'Topic'/ 'Comment Counts'/ 'Summary'  ->  output.result_data
 ```
+---
 
 #### Topic Deep Dive
 Very similar strategy to apply topic modeling & prompt engineering on a selected topic category. To explore deeper insight within the selected topic.
 
-_Core Function_
+> _Core Function_
 
+- *Code Breakdown*
 Same core functions as the categorizer and summarizer, but with parameters optimized for smaller datasets.
 ```
 src/basic/InnerAnalysis.py 
@@ -184,15 +212,17 @@ src/basic/InnerAnalysis.py
 
 ------- # Get original comments with each sub-topic
 ```
+---
 
 #### Excel Sheets
+- *Code Breakdown*
 ```
 src/basic/ExcelGenerator.py
 
 -------- # generate an excel file with two excel sheets:
-      Sheet "Data": Augment prompt engineering results to original data
-      Sheet "Detail": Topic/ Comment Counts/ Summary                          
+                          Sheet "Data": Augment 'Topic' to original data
+                          Sheet "Detail": 'Topic'/ 'Comment Counts'/ 'Summary'                          
 
 ```
-
+## LLM Hallucination / Omission: (TBD)
 
